@@ -1,0 +1,11 @@
+LOTTO PLUGIN
+
+Sag einfach "Lotto" und Siri antwortet sagtdir die Lottozahlen an.
+
+So installierst Du dieses Plugin: 
+
+# 1: Lade den "lotto" ordner in ~/SiriServerCore/plugins/ 
+
+# 2: Fügen Sie "lotto" in plugins.conf ein
+
+FERTIG
