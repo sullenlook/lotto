@@ -1,54 +1,51 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# Résultat du dernier tirage du Lotto (belge, avec 2 t) et de l'Euromillions.
-# Utilise l'API de l'application iPhone de la loterie nationale belge.
-# Par Cédric Boverie (cedbv)
-
-import re
-import xml.etree.ElementTree as ET
-import urllib2, urllib
-import locale 
-import time
-import random
+# author: SullenLook <sullenlook@sullenlook.eu>
+# lotto plugin
 
 from plugin import *
+from BeautifulSoup import BeautifulSoup
+import feedparser
+import random
+import re
+import urllib2, urllib, uuid
+import json
+from xml.dom import minidom
 
 class lotto(Plugin):   
         
-    @register("de-DE", u".*(loto|lotto|eurolotto).*")
-    def lotto(self, speech, language, regex):
-                
-        typetirage = regex.group(regex.lastindex).strip().lower()
-        print typetirage
-        if typetirage == "loto" or typetirage == "lotto":
-            typetirage = "lotto"
-            if self.assistant.timeZoneId != "Europe/Berlin":
-                self.say(u"Bitte beachten Sie, sind nur die Ergebnisse der belgischen Lotto verfuegbar.")
-        else:
-            typetirage = "euromillions"
-        
-        ns = "{http://www."+typetirage+".be/soap2/}"
-        date_tirage = None
-        result = ""
-        result_say = ""
-        try:
-            response = urllib2.urlopen("http://www.lotto.de/soap2/{0}.asmx/LatestDraw?User=appsolution&Password=appsolutionwebservice".format(typetirage), timeout=5).read()
-            xml = ET.fromstring(response)
+        @register("de-DE", ".*Gewinnzahlen |.*Euromillionen.*")
+        def euromillionen_get(self, speech, language):
+                if language == "de-DE":
+                        rss_url = "http://www.lottoy.net/de/euromillionen/rss-feed/aktuelle-lottozahlen-gewinnzahlen-euromillionen.xml"
+                        feed = feedparser.parse( rss_url )
+                        answer = self.ask("alle Gewinnzahlen?")
+                        self.say("Die Aktuellen Euromillionen Gewinnzahlen:")
+                        feedcontent = ""
+                        for entry in feed["items"]:
+                                #self.say(entry["title"])
+                                if format(answer) == "Ja":
+                                        #self.say(summary)
+                                        feedcontent = feedcontent + "\"" + entry["title"] + "\": " + entry["summary"] + "\n\n"
+                                else:
+                                        feedcontent = feedcontent + "\"" + entry["title"] + "\",\n"
+                        self.say(feedcontent, ' ')
+                self.complete_request()
 
-            locale.setlocale(locale.LC_ALL, '')
-            t = time.strptime(xml.find(ns+"DrawDate").text, "%Y-%m-%dT%H:%M:%S")
-            date_tirage = time.strftime(u"%A, %d/%m/%Y", t)
-
-            for c in xml.find(ns+"Results"):
-                result += c.text + " "
-                result_say += c.text + ", "
-        except:
-            pass
-        
-        if result != "":
-            self.say(u"Tirage {0} du {1} : ".format(typetirage,date_tirage))
-            self.say(result,result_say)
-        else:
-            self.say(u"Leider keine Ergebnisse.")
-
-        self.complete_request()     
+        @register("de-DE", ".*Lottozahlen |.*Lotto.*")
+        def fflh_updates(self, speech, language):
+                if language == "de-DE":
+                        rss_url = "http://rss.auto-scripting.com/rss_lotto_6aus49.php?count=1"
+                        feed = feedparser.parse( rss_url )
+                        answer = self.ask("6 aus 49?")
+                        self.say("Die Aktuellen Lottozahlen 6 aus 49:")
+                        feedcontent = ""
+                        for entry in feed["items"]:
+                                #self.say(entry["title"])
+                                if format(answer) == "Ja":
+                                        #self.say(summary)
+                                        feedcontent = feedcontent + "\"" + entry["title"] + "\": " + entry["summary"] + "\n\n"
+                                else:
+                                        feedcontent = feedcontent + "\"" + entry["title"] + "\",\n"
+                        self.say(feedcontent, ' ')
+                self.complete_request()
